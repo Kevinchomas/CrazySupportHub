@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Logs and system files
+*.log
+.DS_Store
+coverage/
+
+# AI & Assistant files (Ocultos para Git)
+.clinerules
+.codebase-memory/
+.cursorrules

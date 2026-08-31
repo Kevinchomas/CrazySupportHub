@@ -1,0 +1,33 @@
+[
+  {
+    "name": "Admin User",
+    "email": "admin@crazysupporthub.com",
+    "password": "Password123!",
+    "role": "admin"
+  },
+  {
+    "name": "Agent User",
+    "email": "agent@crazysupporthub.com",
+    "password": "Password123!",
+    "role": "agent"
+  },
+  {
+    "title": "Cannot access billing dashboard",
+    "description": "When I try to login to billing, it throws a 500 error.",
+    "status": "open",
+    "priority": "high",
+    "category": "billing",
+    "tags": ["billing", "error"],
+    "createdEmail": "agent@crazysupporthub.com"
+  },
+  {
+    "title": "API rate limit exceeded",
+    "description": "Our integration is hitting 429 too quickly.",
+    "status": "in_progress",
+    "priority": "urgent",
+    "category": "technical",
+    "tags": ["api", "rate-limit"],
+    "createdEmail": "agent@crazysupporthub.com",
+    "assignedEmail": "admin@crazysupporthub.com"
+  }
+]
