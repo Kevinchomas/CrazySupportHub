@@ -1,3 +1,32 @@
-import express from "express";
+import express, { Request, Response } from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import helmet from 'helmet';
+import authRoutes from './routes/authRoutes';
+import ticketRoutes from './routes/ticketRoutes';
+import { errorHandler } from './middlewares/errorHandler';
+
+dotenv.config();
+
 const app = express();
-console.log("Server file initialized");
+const port = process.env.PORT || 4000;
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/tickets', ticketRoutes);
+
+app.use(errorHandler);
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+export default app;
+
