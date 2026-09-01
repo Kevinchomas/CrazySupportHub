@@ -1,0 +1,98 @@
+{
+  "name": "CrazySupportHub Ticket Enrichment Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enrichment",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "webhook-trigger-1",
+      "name": "Webhook Trigger",
+      "webhookId": "crazy-support-hub-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const json = item.json;\n  const title = (json.title || '').toLowerCase();\n  const description = (json.description || '').toLowerCase();\n  const text = `${title} ${description}`;\n  const ticketId = json.id || json.ticketId;\n\n  // Category Classification\n  let category = 'other';\n  if (text.includes('factura') || text.includes('cobro') || text.includes('pago')) {\n    category = 'billing';\n  } else if (text.includes('bug') || text.includes('error') || text.includes('servidor')) {\n    category = 'technical';\n  } else if (text.includes('cuenta') || text.includes('login') || text.includes('password')) {\n    category = 'account';\n  }\n\n  // Priority Classification\n  let priority = 'medium';\n  if (text.includes('caído') || text.includes('urgente') || text.includes('crítico')) {\n    priority = 'urgent';\n  } else {\n    priority = 'low';\n  }\n\n  // Dynamic Tags Extraction\n  const tags = [];\n  const potentialTags = ['factura', 'cobro', 'pago', 'bug', 'error', 'servidor', 'cuenta', 'login', 'password', 'caído', 'urgente', 'crítico', 'android', 'ios', 'api', 'email', 'reembolso'];\n  for (const tag of potentialTags) {\n    if (text.includes(tag)) {\n      tags.push(tag);\n    }\n  }\n\n  // Suggested Reply Generation\n  let suggestedReply = 'Hola, hemos recibido tu solicitud y nuestro equipo de soporte la está revisando. Nos pondremos en contacto contigo a la brevedad.';\n  if (category === 'billing') {\n    suggestedReply = 'Hola, lamentamos el inconveniente con tu cobro o factura. Estamos revisando los detalles de la transacción para resolverlo cuanto antes.';\n  } else if (category === 'technical') {\n    suggestedReply = 'Hola, gracias por reportar este error técnico. Nuestro equipo de ingeniería ya ha sido notificado para investigar el origen del problema.';\n  } else if (category === 'account') {\n    suggestedReply = 'Hola, entendemos que tienes problemas con tu cuenta o acceso. Por seguridad, te guiaremos paso a paso para restablecer tu sesión de forma segura.';\n  }\n\n  if (priority === 'urgent') {\n    suggestedReply = '¡Atención URGENTE! Hemos priorizado tu caso debido a la criticidad reportada. Un especialista senior se encuentra atendiendo esta incidencia ahora mismo.';\n  }\n\n  results.push({\n    json: {\n      ticketId: Number(ticketId),\n      priority,\n      category,\n      tags,\n      suggestedReply\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "code-classifier-1",
+      "name": "Classify Ticket",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.BACKEND_ENRICHMENT_URL || 'http://localhost:4000/api/webhooks/n8n/enrichment' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "super_secret_n8n_key_2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"ticketId\": $json.ticketId,\n  \"priority\": $json.priority,\n  \"category\": $json.category,\n  \"tags\": $json.tags,\n  \"suggestedReply\": $json.suggestedReply\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "http-request-callback-1",
+      "name": "Callback Backend",
+      "credentials": {}
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classify Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Ticket": {
+      "main": [
+        [
+          {
+            "node": "Callback Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "crazy-support-hub-n8n-instance"
+  },
+  "tags": []
+}
