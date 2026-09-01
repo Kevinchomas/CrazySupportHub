@@ -63,6 +63,11 @@ async function main() {
     });
   }
 
+  // 4. Reset sequences for PostgreSQL autoincrement IDs
+  console.log("Resetting sequences for PostgreSQL...");
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Ticket"', 'id'), COALESCE(MAX(id), 1)) FROM "Ticket";`);
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"User"', 'id'), COALESCE(MAX(id), 1)) FROM "User";`);
+
   console.log("Database seeding completed successfully.");
 }
 
@@ -74,4 +79,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
 

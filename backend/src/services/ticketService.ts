@@ -1,4 +1,5 @@
-import { PrismaClient, TicketStatus, Priority, Category, Role } from '@prisma/client';
+import { PrismaClient, TicketStatus, Priority, Category, Role, EnrichmentStatus } from '@prisma/client';
+import axios from 'axios';
 import { CreateTicketInput, UpdateTicketInput, QueryTicketInput } from '../schemas/ticketSchema';
 import { CustomError } from '../middlewares/errorHandler';
 
@@ -15,7 +16,7 @@ export class TicketService {
         tags: data.tags || [],
         createdById: createdById,
         assignedToId: data.assignedToId || null,
-        enrichmentStatus: 'pending',
+        enrichmentStatus: EnrichmentStatus.pending,
       },
       include: {
         createdBy: {
@@ -26,6 +27,22 @@ export class TicketService {
         },
       },
     });
+
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (n8nWebhookUrl) {
+      axios.post(n8nWebhookUrl, ticket, { timeout: 10000 })
+        .catch(async (error: any) => {
+          console.error('Failed to trigger n8n enrichment webhook:', error.message);
+          try {
+            await prisma.ticket.update({
+              where: { id: ticket.id },
+              data: { enrichmentStatus: EnrichmentStatus.failed },
+            });
+          } catch (updateError: any) {
+            console.error('Failed to update ticket enrichment status to failed:', updateError.message);
+          }
+        });
+    }
 
     return ticket;
   }
@@ -154,4 +171,5 @@ export class TicketService {
     return updatedTicket;
   }
 }
+
 
