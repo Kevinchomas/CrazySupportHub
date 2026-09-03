@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const body = item.json.body || item.json;\n  const title = (body.title || '').toLowerCase();\n  const description = (body.description || '').toLowerCase();\n  const text = `${title} ${description}`;\n  const ticketId = body.id || body.ticketId;\n\n  // 1. Categoría (billing | technical | account | other)\n  let category = 'other';\n  if (/factura|cobro|pago|tarjeta|reembolso|suscripci[oó]n|membres[ií]a|precio|dinero/.test(text)) {\n    category = 'billing';\n  } else if (/bug|error|servidor|crash|api|cuelga|pantalla|c[oó]digo|500|404|database|bd|base de datos|fallo/.test(text)) {\n    category = 'technical';\n  } else if (/cuenta|login|password|contrase[nñ]a|sesi[oó]n|perfil|correo|acceso|bloquead[oa]|registro/.test(text)) {\n    category = 'account';\n  }\n\n  // 2. Prioridad completa (low | medium | high | urgent)\n  let priority = 'low';\n  if (/ca[ií]do|urgente|cr[ií]tico|emergencia|seguridad|producci[oó]n|hack|robo/.test(text)) {\n    priority = 'urgent';\n  } else if (/error|bug|servidor|500|bloquead[oa]|fallo|imposible|no puedo|cae/.test(text)) {\n    priority = 'high';\n  } else if (/factura|cobro|pago|reembolso|cambio|actualiz/.test(text)) {\n    priority = 'medium';\n  }\n\n  // 3. Extracción Dinámica de Tags\n  const potentialTags = ['factura', 'cobro', 'pago', 'reembolso', 'bug', 'error', 'servidor', 'cuenta', 'login', 'password', 'urgente', 'crítico', 'android', 'ios', 'api', 'email', '500', '404'];\n  const tags = potentialTags.filter(tag => text.includes(tag));\n  if (tags.length === 0) tags.push('general');\n\n  // 4. Generación de Respuesta Sugerida\n  let suggestedReply = 'Hola, hemos recibido tu solicitud y nuestro equipo de soporte la está revisando. Nos pondremos en contacto contigo a la brevedad.';\n  if (category === 'billing') {\n    suggestedReply = 'Hola, lamentamos el inconveniente con tu cobro o factura. Estamos revisando los detalles de la transacción para resolverlo cuanto antes.';\n  } else if (category === 'technical') {\n    suggestedReply = 'Hola, gracias por reportar este error técnico. Nuestro equipo de ingeniería ya ha sido notificado para investigar el origen del problema.';\n  } else if (category === 'account') {\n    suggestedReply = 'Hola, entendemos que tienes problemas con tu cuenta o acceso. Por seguridad, te guiaremos paso a paso para restablecer tu sesión de forma segura.';\n  }\n\n  if (priority === 'urgent') {\n    suggestedReply = '¡Atención URGENTE! Hemos priorizado tu caso debido a la criticidad reportada. Un especialista senior se encuentra atendiendo esta incidencia ahora mismo.';\n  }\n\n  results.push({\n    json: {\n      ticketId: Number(ticketId),\n      priority,\n      category,\n      tags,\n      suggestedReply,\n      enrichmentStatus: 'done'\n    }\n  });\n}\n\nreturn results;"
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const body = item.json.body || item.json;\n  const rawTitle = body.title || body.rawTitle || '';\n  const rawDescription = body.description || body.rawDescription || '';\n  const text = `${rawTitle} ${rawDescription}`.toLowerCase();\n  const ticketId = body.id || body.ticketId;\n\n  // 1. Categoría Fallback\n  let category = 'other';\n  if (/factura|cobro|pago|tarjeta|reembolso|suscripci[oó]n|membres[ií]a|precio|dinero/.test(text)) {\n    category = 'billing';\n  } else if (/bug|error|servidor|crash|api|cuelga|pantalla|c[oó]digo|500|404|database|bd|base de datos|fallo/.test(text)) {\n    category = 'technical';\n  } else if (/cuenta|login|password|contrase[nñ]a|sesi[oó]n|perfil|correo|acceso|bloquead[oa]|registro/.test(text)) {\n    category = 'account';\n  }\n\n  // 2. Prioridad Fallback\n  let priority = 'low';\n  if (/ca[ií]do|urgente|cr[ií]tico|emergencia|seguridad|producci[oó]n|hack|robo/.test(text)) {\n    priority = 'urgent';\n  } else if (/error|bug|servidor|500|bloquead[oa]|fallo|imposible|no puedo|cae/.test(text)) {\n    priority = 'high';\n  } else if (/factura|cobro|pago|reembolso|cambio|actualiz/.test(text)) {\n    priority = 'medium';\n  }\n\n  // 3. Extracción Dinámica de Tags Fallback\n  const potentialTags = ['factura', 'cobro', 'pago', 'reembolso', 'bug', 'error', 'servidor', 'cuenta', 'login', 'password', 'urgente', 'crítico', 'android', 'ios', 'api', 'email', '500', '404'];\n  const tags = potentialTags.filter(tag => text.includes(tag));\n  if (tags.length === 0) tags.push('general');\n\n  // 4. Respuesta Sugerida Fallback\n  let suggestedReply = 'Hola, hemos recibido tu solicitud y nuestro equipo de soporte la está revisando. Nos pondremos en contacto contigo a la brevedad.';\n  if (category === 'billing') {\n    suggestedReply = 'Hola, lamentamos el inconveniente con tu cobro o factura. Estamos revisando los detalles de la transacción para resolverlo cuanto antes.';\n  } else if (category === 'technical') {\n    suggestedReply = 'Hola, gracias por reportar este error técnico. Nuestro equipo de ingeniería ya ha sido notificado para investigar el origen del problema.';\n  } else if (category === 'account') {\n    suggestedReply = 'Hola, entendemos que tienes problemas con tu cuenta o acceso. Por seguridad, te guiaremos paso a paso para restablecer tu sesión de forma segura.';\n  }\n\n  if (priority === 'urgent') {\n    suggestedReply = '¡Atención URGENTE! Hemos priorizado tu caso debido a la criticidad reportada. Un especialista senior se encuentra atendiendo esta incidencia ahora mismo.';\n  }\n\n  // Construir Payload Limpio para la API de Gemini\n  const promptText = `Analyze this support ticket and classify it into JSON format.\\n\\nTitle: ${rawTitle}\\nDescription: ${rawDescription}\\n\\nOutput STRICTLY valid JSON with key names:\\n- priority: one of ['low', 'medium', 'high', 'urgent']\\n- category: one of ['billing', 'technical', 'account', 'other']\\n- tags: list of keyword strings\\n- suggestedReply: polite customer support response string in Spanish`;\n\n  results.push({\n    json: {\n      ticketId: Number(ticketId),\n      rawTitle,\n      rawDescription,\n      fallbackPriority: priority,\n      fallbackCategory: category,\n      fallbackTags: tags,\n      fallbackSuggestedReply: suggestedReply,\n      geminiPayload: {\n        contents: [\n          {\n            parts: [\n              {\n                text: promptText\n              }\n            ]\n          }\n        ],\n        generationConfig: {\n          responseMimeType: \"application/json\"\n        }\n      }\n    }\n  });\n}\n\nreturn results;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -28,7 +28,50 @@
         300
       ],
       "id": "code-classifier-1",
-      "name": "Classify Ticket",
+      "name": "Rule Fallback Prep",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={{$env.GEMINI_API_KEY}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.geminiPayload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "gemini-classifier-1",
+      "name": "Gemini AI Classifier",
+      "credentials": {},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const geminiOutput = items[i].json;\n  \n  let prepData = {};\n  try {\n    prepData = $('Rule Fallback Prep').item.json;\n  } catch (e) {\n    prepData = {};\n  }\n\n  let priority = prepData.fallbackPriority || 'medium';\n  let category = prepData.fallbackCategory || 'other';\n  let tags = prepData.fallbackTags || ['general'];\n  let suggestedReply = prepData.fallbackSuggestedReply || 'Hemos recibido tu consulta y la estamos procesando.';\n\n  try {\n    if (geminiOutput.candidates && geminiOutput.candidates[0] && geminiOutput.candidates[0].content && geminiOutput.candidates[0].content.parts[0].text) {\n      const rawText = geminiOutput.candidates[0].content.parts[0].text;\n      const aiData = JSON.parse(rawText);\n      if (aiData.priority) priority = aiData.priority;\n      if (aiData.category) category = aiData.category;\n      if (Array.isArray(aiData.tags) && aiData.tags.length > 0) tags = aiData.tags;\n      if (aiData.suggestedReply) suggestedReply = aiData.suggestedReply;\n    }\n  } catch (e) {\n    // Si falla el parseo de la IA, se conservan los valores por regla\n  }\n\n  results.push({\n    json: {\n      ticketId: Number(prepData.ticketId),\n      priority,\n      category,\n      tags,\n      suggestedReply,\n      enrichmentStatus: 'done'\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "id": "parse-gemini-response-1",
+      "name": "Parse & Format Results",
       "credentials": {}
     },
     {
@@ -46,13 +89,13 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"ticketId\": {{$json.ticketId}},\n  \"priority\": \"{{$json.priority}}\",\n  \"category\": \"{{$json.category}}\",\n  \"tags\": {{$json.tags ? JSON.stringify($json.tags) : '[]'}},\n  \"suggestedReply\": \"{{$json.suggestedReply}}\",\n  \"enrichmentStatus\": \"done\"\n}",
+        "jsonBody": "={{ $json }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        680,
+        1120,
         300
       ],
       "id": "http-request-callback-1",
@@ -66,14 +109,36 @@
       "main": [
         [
           {
-            "node": "Classify Ticket",
+            "node": "Rule Fallback Prep",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Classify Ticket": {
+    "Rule Fallback Prep": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse & Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Format Results": {
       "main": [
         [
           {
