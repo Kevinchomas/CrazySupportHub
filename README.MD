@@ -133,3 +133,8 @@ Se utilizaron herramientas de asistencia basada en IA (Gemini / Cline) para acel
 * Comunicación en Entornos Contenerizados: Al ejecutar la suite completa en contenedores de Docker, la variable `N8N_WEBHOOK_URL` dentro del backend debe apuntar a `http://host.docker.internal:5678` en lugar de `localhost` para permitir la comunicación entre contenedores.
 * Paginación y Virtualización del Tablero: El listado del tablero Kanban carga las incidencias en memoria. Para un volumen superior a miles de tickets simultáneos, se recomienda implementar paginación por columna o infinite scroll.
 * Evolución Futura (WebSockets): Aunque el mecanismo de *polling* cumple con la experiencia fluida en la creación individual, en un entorno de trabajo colaborativo multisitio es recomendable sustituir el sondeo por Server-Sent Events (SSE) o Socket.io para emitir actualizaciones en tiempo real a todos los agentes conectados.
+
+
+# Video Anexo/demo:
+
+* https://drive.google.com/file/d/18_q6p4u81gPiqdwZfD9o4FF3XFNO1ReK/view?usp=drive_link
