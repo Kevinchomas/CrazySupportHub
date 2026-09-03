@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import authRoutes from './routes/authRoutes';
 import ticketRoutes from './routes/ticketRoutes';
 import webhookRoutes from './routes/webhookRoutes';
+import userRoutes from './routes/userRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/webhooks/n8n', webhookRoutes);
 
 app.use(errorHandler);

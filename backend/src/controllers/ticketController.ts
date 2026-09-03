@@ -82,4 +82,26 @@ export class TicketController {
       next(error);
     }
   }
+
+  async deleteTicket(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        });
+        return;
+      }
+      const ticketId = parseInt(req.params.id, 10);
+      if (isNaN(ticketId)) {
+        res.status(400).json({
+          error: { code: 'BAD_REQUEST', message: 'Invalid ticket ID' },
+        });
+        return;
+      }
+      await ticketService.deleteTicket(ticketId, req.user.id, req.user.role as Role);
+      res.status(200).json({ message: 'Ticket deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

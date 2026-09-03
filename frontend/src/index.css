@@ -49,6 +49,12 @@
   }
 }
 
+
+body {
+  background-color: #0B0F19 !important;
+  color: #FFFFFF !important;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -57,3 +63,20 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* Scrollbar Personalizado Modo Oscuro */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0F19;
+}
+::-webkit-scrollbar-thumb {
+  background: #232F48;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C6FF00;
+}
+

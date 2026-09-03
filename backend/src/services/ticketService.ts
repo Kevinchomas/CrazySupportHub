@@ -57,8 +57,8 @@ export class TicketService {
     if (userRole === Role.agent) {
       andConditions.push({
         OR: [
-          { createdById: userId },
           { assignedToId: userId },
+          { createdById: userId },
         ],
       });
     }
@@ -149,19 +149,38 @@ export class TicketService {
       if (ticket.createdById !== userId && ticket.assignedToId !== userId) {
         throw new CustomError('Forbidden access to ticket', 403, 'FORBIDDEN');
       }
+
+      if (data.assignedToId !== undefined || data.priority !== undefined || data.category !== undefined || data.tags !== undefined || data.title !== undefined || data.description !== undefined) {
+        throw new CustomError('Agents are only allowed to update ticket status', 403, 'FORBIDDEN');
+      }
+
+      if (ticket.status === TicketStatus.closed) {
+        throw new CustomError('Closed tickets cannot be modified by agents', 403, 'FORBIDDEN');
+      }
+
+      if (data.status === TicketStatus.closed) {
+        throw new CustomError('Los agentes no tienen permiso para cerrar tickets', 403, 'FORBIDDEN');
+      }
+    }
+
+    const updateData: any = {};
+    if (userRole === Role.admin) {
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.status !== undefined) updateData.status = data.status as TicketStatus;
+      if (data.priority !== undefined) updateData.priority = data.priority as Priority;
+      if (data.category !== undefined) updateData.category = data.category as Category;
+      if (data.tags !== undefined) updateData.tags = data.tags;
+      if (data.assignedToId !== undefined) updateData.assignedToId = data.assignedToId;
+    } else {
+      if (data.status !== undefined) {
+        updateData.status = data.status as TicketStatus;
+      }
     }
 
     const updatedTicket = await prisma.ticket.update({
       where: { id: ticketId },
-      data: {
-        title: data.title,
-        description: data.description,
-        status: data.status as TicketStatus,
-        priority: data.priority as Priority,
-        category: data.category as Category,
-        tags: data.tags,
-        assignedToId: data.assignedToId,
-      },
+      data: updateData,
       include: {
         createdBy: { select: { id: true, name: true, email: true, role: true } },
         assignedTo: { select: { id: true, name: true, email: true, role: true } },
@@ -169,6 +188,28 @@ export class TicketService {
     });
 
     return updatedTicket;
+  }
+
+  async deleteTicket(ticketId: number, userId: number, userRole: Role) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      throw new CustomError('Ticket not found', 404, 'TICKET_NOT_FOUND');
+    }
+
+    if (userRole === Role.agent) {
+      if (ticket.createdById !== userId) {
+        throw new CustomError('Only admin or ticket creator can delete this ticket', 403, 'FORBIDDEN');
+      }
+    }
+
+    await prisma.ticket.delete({
+      where: { id: ticketId },
+    });
+
+    return { success: true };
   }
 }
 

@@ -43,13 +43,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new CustomError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+      throw new CustomError('Correo electrónico o contraseña incorrectos', 401, 'INVALID_CREDENTIALS');
     }
 
     const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new CustomError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+      throw new CustomError('Correo electrónico o contraseña incorrectos', 401, 'INVALID_CREDENTIALS');
     }
 
     const secret = process.env.JWT_SECRET || 'super_secret_jwt_key';
