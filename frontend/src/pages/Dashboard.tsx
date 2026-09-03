@@ -126,7 +126,9 @@ export const Dashboard: React.FC = () => {
       <CreateTicketDialog
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onCreated={fetchTickets}
+        onCreated={(newTicket) => {
+          setTickets((prev) => [newTicket, ...prev]);
+        }}
       />
     </AppLayout>
   );
