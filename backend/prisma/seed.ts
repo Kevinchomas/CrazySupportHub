@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TicketStatus, Priority, Category } from "@prisma/client";
+import { PrismaClient, Role, TicketStatus, Priority, Category, EnrichmentStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
@@ -13,58 +13,60 @@ async function main() {
   }
 
   const rawData = fs.readFileSync(seedFilePath, "utf-8");
-  const items = JSON.parse(rawData);
+  const seedData = JSON.parse(rawData);
 
-  // Separate users and tickets from the seed array
-  const userItems = items.filter((item: any) => item.email && item.password);
-  const ticketItems = items.filter((item: any) => item.title && item.description);
+  const userItems = seedData.users || [];
+  const ticketItems = seedData.tickets || [];
 
-  const userEmailToIdMap = new Map<string, number>();
+  // 1. Clean existing records in correct order to avoid foreign key violations
+  console.log("Cleaning existing tickets and users...");
+  await prisma.ticket.deleteMany({});
+  await prisma.user.deleteMany({});
 
+  // 2. Insert users
+  console.log(`Inserting ${userItems.length} users...`);
   for (const u of userItems) {
     const passwordHash = await bcrypt.hash(u.password, 10);
     const roleValue = (u.role && u.role.toLowerCase() === "admin") ? Role.admin : Role.agent;
 
-    const upsertedUser = await prisma.user.upsert({
-      where: { email: u.email },
-      update: {
-        name: u.name,
-        passwordHash,
-        role: roleValue,
-      },
-      create: {
+    await prisma.user.create({
+      data: {
+        id: u.id,
         name: u.name,
         email: u.email,
         passwordHash,
         role: roleValue,
       },
     });
-
-    userEmailToIdMap.set(upsertedUser.email, upsertedUser.id);
   }
 
+  // 3. Insert tickets
+  console.log(`Inserting ${ticketItems.length} tickets...`);
   for (const t of ticketItems) {
-    const createdById = t.createdEmail ? userEmailToIdMap.get(t.createdEmail) : undefined;
-    if (!createdById) {
-      console.warn(`Skipping ticket "${t.title}" because creator email was not found.`);
-      continue;
-    }
-
-    const assignedToId = t.assignedEmail ? userEmailToIdMap.get(t.assignedEmail) : null;
-
     await prisma.ticket.create({
       data: {
+        id: t.id,
         title: t.title,
         description: t.description,
         status: (t.status as TicketStatus) || TicketStatus.open,
         priority: (t.priority as Priority) || null,
         category: (t.category as Category) || null,
         tags: t.tags || [],
-        createdById,
-        assignedToId,
+        suggestedReply: t.suggestedReply || null,
+        enrichmentStatus: (t.enrichmentStatus as EnrichmentStatus) || EnrichmentStatus.pending,
+        enrichedAt: t.enrichedAt ? new Date(t.enrichedAt) : null,
+        createdById: t.createdBy,
+        assignedToId: t.assignedTo || null,
+        createdAt: t.createdAt ? new Date(t.createdAt) : undefined,
+        updatedAt: t.updatedAt ? new Date(t.updatedAt) : undefined,
       },
     });
   }
+
+  // 4. Reset sequences for PostgreSQL autoincrement IDs
+  console.log("Resetting sequences for PostgreSQL...");
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"Ticket"', 'id'), COALESCE(MAX(id), 1)) FROM "Ticket";`);
+  await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"User"', 'id'), COALESCE(MAX(id), 1)) FROM "User";`);
 
   console.log("Database seeding completed successfully.");
 }
@@ -77,3 +79,5 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
+
